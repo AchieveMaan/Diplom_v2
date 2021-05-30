@@ -36,7 +36,7 @@ class SubjectDataBase:
         self.c = self.conn.cursor()
         self.c.execute('''CREATE TABLE IF NOT EXISTS info (GROUP_NAME text  PRIMARY KEY)''')
         self.c.execute('''CREATE TABLE IF NOT EXISTS subject (ID int NOT NULL PRIMARY KEY, DATES text NOT NULL)''')
-        self.c.execute('''CREATE TABLE IF NOT EXISTS lessons (DATE text NOT NULL PRIMARY KEY)''')
+        self.c.execute('''CREATE TABLE IF NOT EXISTS lessons (DATES text NOT NULL PRIMARY KEY)''')
         self.conn.commit()
 
     def insert_data(self, ID, DATES):

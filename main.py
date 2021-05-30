@@ -53,7 +53,11 @@ def open_subject_file():
     subject_db.subjectFile = askopenfilename(filetypes=[("DB Files", "*.db"), ("All Files", "*.*")])
     subject_db.reopen()
     subjectNameLabel.config(text=subject_db.subjectFile)
-    #groupFrame.view_records()
+    subjectFrame.db.c.execute('''SELECT * FROM info''')
+    subjectFrame.group_name = subjectFrame.db.c.fetchall()
+    subjectFrame.groupNameLabel.configure(text=subjectFrame.group_name)
+    subjectFrame.update_date_list()
+    subjectFrame.view_records()
 
 
 def save_subject_file():
@@ -62,7 +66,7 @@ def save_subject_file():
     subject_db.subjectFile = save_file
     subject_db.reopen()
     subjectNameLabel.config(text=subject_db.subjectFile)
-    #groupFrame.view_records()
+    groupFrame.view_records()
 
 
 def open_export_frame():
@@ -111,30 +115,36 @@ class SubjectFrame(tk.Frame):
         self.groupNameLabel = tk.Label(infobar, bg='#6C858F', text=self.group_name)
         self.groupNameLabel.grid(column=1, row=0)
 
-        gap_1 = tk.Frame(infobar, bg='#98817C', width=200)
+        gap_1 = tk.Frame(infobar, bg='#98817C', width=80)
         gap_1.grid(column=2, row=0)
 
         self.groupName = tk.Entry(infobar, width=20, bg='white', bd=1)
-        self.groupName.grid(column=5, row=0)
+        self.groupName.grid(column=3, row=0)
 
         groupChange = tk.Button(infobar, command=self.change_group_name, text='Поменять название группы', bg='#98817C', bd=1)
-        groupChange.grid(column=6, row=0)
+        groupChange.grid(column=4, row=0)
 
-        #self.tree.heading('Group_Name', text='Group_Name')
+        infoDateLabel = tk.Label(infobar, bg='#98817C', text='Активная дата:')
+        infoDateLabel.grid(column=0, row=1)
 
-        self.tree = ttk.Treeview(self, columns=('FIO', 'VISIT_DATE'), height=15, show='headings')
+        self.subjectDates = ttk.Combobox(infobar)
+        self.subjectDates.grid(column=1, row=1)
 
-        self.tree.column('FIO', width=300, anchor=tk.CENTER)
-        self.tree.column('VISIT_DATE', width=300, anchor=tk.CENTER)
+        gap_2 = tk.Frame(infobar, bg='#98817C', width=80)
+        gap_2.grid(column=2, row=1)
 
-        self.tree.heading('VISIT_DATE', text='Время посещения')
-        self.tree.heading('FIO', text='ФИО студента')
+        self.activeDate = tk.Entry(infobar, width=20, bg='white', bd=1)
+        self.activeDate.grid(column=3, row=1)
 
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH)
+        dateChange = tk.Button(infobar, command=self.add_date, text='Добавить дату', bg='#98817C', bd=1)
+        dateChange.grid(column=4, row=1)
 
-        scroll = tk.Scrollbar(self, command=self.tree.yview)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree.configure(yscrollcommand=scroll.set)
+        self.studentsFIO = ttk.Combobox(infobar)
+        self.studentsFIO.grid(column=0, row=2)
+
+        self.studentsDates = tk.Listbox(infobar)
+        self.studentsDates.grid(column=1, row=2)
+
 
     def change_group_name(self):
         try:
@@ -146,6 +156,42 @@ class SubjectFrame(tk.Frame):
             self.groupNameLabel.configure(text=self.group_name)
 
         #self.view_records()
+
+    def view_records(self):
+        groupFrame.db.c.execute('''SELECT FIO FROM students''')
+        students = []
+        for row in groupFrame.db.c.fetchall():
+            students.append(row)
+            print(row)
+
+        self.studentsFIO.config(values=students)
+        self.studentsFIO.current(0)
+
+        groupFrame.db.c.execute('''SELECT ID FROM students''')
+        students_id = []
+        for row in self.db.c.fetchall():
+            students_id.append(row)
+
+        for id in students_id:
+            self.db.c.execute('''SELECT DATES FROM subject WHERE ID LIKE ?''', id)
+            self.studentsDates.delete(0,'end')
+            [self.studentsDates.insert('', 'end', values=row) for row in self.db.c.fetchall()]
+
+
+
+    def add_date(self):
+        self.db.add_lesson(self.activeDate.get())
+        self.update_date_list()
+        #self.view_records()
+
+    def update_date_list(self):
+        self.db.c.execute('''SELECT * FROM lessons''')
+        dates = []
+        for row in self.db.c.fetchall():
+            dates.append(row)
+        self.subjectDates.config(values=dates)
+        self.subjectDates.current(0)
+        # self.view_records()
 
 class GroupFrame(tk.Frame):
     def __init__(self, root):
